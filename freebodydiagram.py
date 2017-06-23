@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import logging
 import numpy as np
 import pandas as pd
@@ -6,6 +7,7 @@ from pint import UnitRegistry
 u = UnitRegistry()
 
 def Scale(body,factor):
+    '''Not used'''
     rmat = [[factor,0,0],
             [0,factor,0],
             [0,0,factor]]
@@ -46,6 +48,7 @@ def FD2FM(FD):
     return [np.hstack((F,np.cross(D,F))) for F,D in FD]
 
 def plot_geometry(geom,xaxis,yaxis,width,height):
+    '''Depricated'''
     h = '+-'+'--'*width+'-+\n'
     d = h
     vs = geom.values()
@@ -101,7 +104,6 @@ def geometry():
     Offset      (jib,       pbj['boom_jib'])
     RotateY     (boomjib,   alfa)
     RotateZ     (pbj,       gamma)
-    Offset      (pbj,       [10000,0,10000]*u.mm)
     
     return pbj
 
@@ -184,12 +186,30 @@ def calculate(geom):
             **dict(zip(["FXj","FYj","FZj","MXj","MYj","MZj"],loadsFM2)),
             **dict(zip(["RX1j","RY1j","RZ1j","RX2j","RZ2j","RC3j"],reaction2))}
 
-def main():
+def iterator():
+    global m_load
+##    m_load = 0*u.t
+    g = geometry()
+    while True:
+        r = calculate(g)
+        q1 = r["RC3b"] <   89*2
+        q2 = r["RC3b"] > -124*2
+        q3 = r["RC3j"] <   89*2
+        q4 = r["RC3j"] > -124*2
+        if q1 and q2 and q3 and q4:
+            logging.info(f"passed: {alfa} {beta} {m_load}")
+            m_load += 1*u.t
+            good_r = r
+        else:
+            logging.info(f"final: {alfa} {beta} {m_load}")
+            return good_r
+
+def main(key=None):
     global alfa, beta, gamma, accs, m_jib, m_boom, m_cyl, m_load, acc, df, data
 
-    alfas =  list(range(0,  75+1, 15))*u.deg # boom angle
-    betas =  list(range(0, 120+1, 30))*u.deg # jib angle
-    gammas = list(range(0, 360+1, 15))*u.deg # slew angle
+    alfas =  list(range(0,  75+1, 5))*u.deg # boom angle
+    betas =  list(range(0, 120+1, 5))*u.deg # jib angle
+    gammas = list(range(0, 360+1, 45))*u.deg # slew angle
    
     m_jib = 6*u.t
     m_boom = 16*u.t
@@ -199,24 +219,37 @@ def main():
     acc = np.array([-.48, 0.0, -1.17])
     data = []
 
-    for gamma in gammas:
-        for beta in betas:
-            for alfa in alfas:
-                for m_load in m_loads:
-                    data.append(calculate(geometry()))
-
-##    gamma = 0*u.deg
-##    beta = 90*u.deg
-##    alfa = 35*u.deg
-##    m_load = 5*u.t
-##    data.append(calculate(geometry()))
+    if key=='all':
+        for gamma in gammas:
+            for beta in betas:
+                for alfa in alfas:
+                    for m_load in m_loads:
+                        data.append(calculate(geometry()))
+        df = pd.DataFrame(data)
+        df.to_pickle('fbd')
+    elif key=='iterator':
+        for gamma in gammas:
+            for beta in betas:
+                for alfa in alfas:
+                    m_load = 0*u.t
+                    data.append(iterator())
+        df = pd.DataFrame(data)
+        df.to_pickle('fbdi')
+    else:
+        gamma = 0*u.deg
+        beta = 90*u.deg
+        alfa = 35*u.deg
+        m_load = 5*u.t
+        data.append(calculate(geometry()))
+        df = pd.DataFrame(data)
    
-    df = pd.DataFrame(data)
-    df.to_pickle('fbd')
        
-logging.basicConfig(level=logging.WARNING)
-main()
+# logging.basicConfig(level=logging.INFO)
+if __name__ == '__main__':
+    main(key='iterator')
 # plot_geometry(geometry(),xaxis=0,yaxis=2,width=39,height=30)
-
-
+##pd.DataFrame(geometry()).T.plot.scatter(0,2, subplots=True)
+##pd.DataFrame(geometry()).T.plot.scatter(1,2, subplots=True)
+##pd.DataFrame(geometry()).T.plot.scatter(0,1, subplots=True)
+plt.show()
 
