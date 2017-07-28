@@ -1,6 +1,5 @@
-
 import matplotlib.pyplot as plt
-import matplotlib as mpl
+from matplotlib.mlab import griddata
 import pandas as pd
 import numpy as np
 plt.style.use('ggplot')
@@ -37,23 +36,34 @@ df['chart'] =  df['q3'] & df['q4']
 ##                     values=['reachx','reachz','chart']).plot.scatter('reachx','reachz',c='chart',subplots=True)
 
 dfi = pd.read_pickle('fbdi')
-print(dfi.pivot_table(
-    index='beta',
-    columns='alfa',
-    aggfunc=np.min,
-    values='m_load'))
+##print(dfi.pivot_table(
+##    index='beta',
+##    columns='alfa',
+##    aggfunc=np.min,
+##    values='m_load'))
 # discretize data
 DSCRT = 5
 dfi['m_load2'] = dfi['m_load'] // DSCRT * DSCRT
 dfipt = dfi[dfi.reachz>-5].pivot_table(
     index=['alfa','beta'],
     aggfunc=np.min,
-    values=['reachx','reachz','m_load2'])
-dfipt.plot.scatter(
-        'reachx',
-        'reachz',
-        c='m_load2',
-        s=100,
-        cmap=plt.get_cmap('Spectral_r',size(dfipt['m_load2'])/DSCRT))
+    values=['reachx','reachz','m_load2','m_load'])
+##dfipt.plot.scatter(
+##        'reachx',
+##        'reachz',
+##        c='m_load2',
+##        s=100,
+##        cmap=plt.get_cmap('Spectral_r',size(dfipt['m_load2'])/DSCRT))
 
+x, y, z = np.array([dfipt.reachx, dfipt.reachz, dfipt.m_load2])
+n = 100
+d = 0
+xi = np.linspace(min(dfipt.reachx)+d,max(dfipt.reachx)-d,n)
+yi = np.linspace(min(dfipt.reachz)+d,max(dfipt.reachz)-d,n)
+
+zi = griddata(x,y,z,xi,yi,interp='linear')
+##plt.contour(xi,yi,zi, 6, linewidths=.5, colors='k')
+plt.contour(xi, yi, zi)
+# plt.contourf(xi, yi, zi, 4,vmax=abs(zi).max(), vmin=-abs(zi).max())
+plt.colorbar()
 plt.show()

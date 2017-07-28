@@ -186,7 +186,7 @@ def calculate(geom):
             **dict(zip(["FXj","FYj","FZj","MXj","MYj","MZj"],loadsFM2)),
             **dict(zip(["RX1j","RY1j","RZ1j","RX2j","RZ2j","RC3j"],reaction2))}
 
-def iterator():
+def iterate_load():
     global m_load
 ##    m_load = 0*u.t
     g = geometry()
@@ -203,6 +203,17 @@ def iterator():
         else:
             logging.info(f"final: {alfa} {beta} {m_load}")
             return good_r
+def iterate_position():
+    for m_load in m_loads:
+        for alfa in alfas:
+            beta = 0:
+            for gamma in gammas:
+                g = geometry()
+                r = calculate()
+                if r['RC3b'] > 89*2:
+                    pass #hmmmm
+                    # step slowly down or smt?
+        
 
 def main(key=None):
     global alfa, beta, gamma, accs, m_jib, m_boom, m_cyl, m_load, acc, df, data
@@ -227,7 +238,7 @@ def main(key=None):
                         data.append(calculate(geometry()))
         df = pd.DataFrame(data)
         df.to_pickle('fbd')
-    elif key=='iterator':
+    elif key=='iterate_load':
         for gamma in gammas:
             for beta in betas:
                 for alfa in alfas:
@@ -235,6 +246,8 @@ def main(key=None):
                     data.append(iterator())
         df = pd.DataFrame(data)
         df.to_pickle('fbdi')
+    elif key=='iterate_position':
+        iterate_position()            
     else:
         gamma = 0*u.deg
         beta = 90*u.deg
@@ -246,7 +259,7 @@ def main(key=None):
        
 # logging.basicConfig(level=logging.INFO)
 if __name__ == '__main__':
-    main(key='iterator')
+    main(key='iterate_load')
 # plot_geometry(geometry(),xaxis=0,yaxis=2,width=39,height=30)
 ##pd.DataFrame(geometry()).T.plot.scatter(0,2, subplots=True)
 ##pd.DataFrame(geometry()).T.plot.scatter(1,2, subplots=True)
